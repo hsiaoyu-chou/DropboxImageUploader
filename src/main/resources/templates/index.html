@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Image Uploader</title>
+</head>
+
+<body>
+
+<br>
+    Welcome to Fish's Image Uploader.</br>
+    This web app helps you upload images to your Dropbox.</br>
+    <button onclick="start()">login to Dropbox</button>
+</p>
+
+<script>
+
+    //var app_url = "http://localhost:5000/";
+    var app_url = location.href;
+    var redirect_uri = app_url + "connected";
+
+    function start(){
+        window.location = app_url + "get_code";
+    }
+
+</script>
+
+</body>
+</html>

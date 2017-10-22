@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Image Uploader</title>
+</head>
+<body>
+
+<p th:text = "${status}"> please wait...</p>
+<p th:text="${display_name}">display_name</p>
+<p th:text="${message1}" id="message1"></p>
+<p th:text="${message2}" id="message2"></p>
+<p th:text="${message3}" id="message3"></p>
+
+<form action="upload" method="post" enctype="multipart/form-data">
+    <br><input type="file" name="file"></br>
+    <br><input type="file" name="file"></br>
+    <br><input type="file" name="file"></br>
+    <br><input type="submit" id="submit" onclick="myfunc()"> Note : each image must not be larger than 150MB.</br>
+</form>
+
+<script>
+
+    function myfunc(){
+
+        document.getElementById("message1").innerHTML = "please wait...";
+        document.getElementById("message2").innerHTML = "";
+        document.getElementById("message3").innerHTML = "";
+
+    }
+
+</script>
+
+</body>
+</html>

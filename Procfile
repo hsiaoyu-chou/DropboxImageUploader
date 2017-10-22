@@ -1,0 +1,1 @@
+web: java -jar target/ImageUploader-1.0.jar
