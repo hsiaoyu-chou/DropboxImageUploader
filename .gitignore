@@ -1,0 +1,12 @@
+# Maven build output folder
+target/
+
+# IntelliJ project folder
+.idea/
+*.iml
+
+# macOS
+*.DS_Store
+
+# app info
+appInfo_secret.app

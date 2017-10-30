@@ -10,10 +10,9 @@ import com.dropbox.core.v2.users.FullAccount;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -26,13 +25,17 @@ import java.util.Map;
 @SpringBootApplication
 public class Main {
 
-  private String app_url = "https://nameless-sands-54583.herokuapp.com/";
-  //private String app_url = "http://localhost:5000/";
+  //private String app_url = "https://nameless-sands-54583.herokuapp.com/";
+  //private String argAppInfoFile = "appInfo.app";
+
+  private String app_url = "http://localhost:5000/";
+  private String argAppInfoFile = "appInfo_secret.app";
+
   private String redirectUri = app_url + "connected";
 
   private User user = new User();
 
-  private String argAppInfoFile = "appInfo.app";
+
 
   private DbxRequestConfig requestConfig;
   private DbxAppInfo appInfo;
@@ -109,39 +112,39 @@ public class Main {
       } catch (DbxWebAuth.BadRequestException ex) {
 
           exceptionHandler(action, response, "Bad request: " + ex.getMessage(), 400, "");
-          model.put("message", "fail connected to Dropbox");
-          return "error";
+          model.put("status", "fail connected to Dropbox");
+          return "connected";
 
       } catch (DbxWebAuth.BadStateException ex) {
 
-          model.put("message", "fail connected to Dropbox");
-          return "error";
+          model.put("status", "fail connected to Dropbox");
+          return "connected";
 
       } catch (DbxWebAuth.CsrfException ex) {
 
           exceptionHandler(action, response, "CSRF mismatch: " + ex.getMessage(), 403, "Forbidden.");
-          model.put("message", "fail connected to Dropbox");
-          return "error";
+          model.put("status", "fail connected to Dropbox");
+          return "connected";
 
       } catch (DbxWebAuth.NotApprovedException ex) {
 
           // When Dropbox asked "Do you want to allow this app to access your
           // Dropbox account?", the user clicked "No".
           exceptionHandler(action, response, "Not Approved Exception: " + ex.getMessage(), 503, "Not Approved");
-          model.put("message", "Please approve this app to connect to your Dropbox");
-          return "error";
+          model.put("status", "Please approve this app to connect to your Dropbox");
+          return "connected";
 
       } catch (DbxWebAuth.ProviderException ex) {
 
           exceptionHandler(action, response, "Auth failed: " + ex.getMessage(), 503, "Error communicating with Dropbox.");
-          model.put("message", "fail connected to Dropbox");
-          return "error";
+          model.put("status", "fail connected to Dropbox");
+          return "connected";
 
       } catch (DbxException ex) {
 
           exceptionHandler(action, response, "Error getting token: " + ex.getMessage(), 503, "Error communicating with Dropbox.");
-          model.put("message", "fail connected to Dropbox");
-          return "error";
+          model.put("status", "fail connected to Dropbox");
+          return "connected";
 
       }
 
@@ -162,58 +165,49 @@ public class Main {
       }
 
       model.put("status", "connected to Dropbox");
-      model.put("display_name","Welcome, " + user.display_name);
+      model.put("display_name",user.display_name);
 
       return "connected";
   }
 
+  @ResponseBody
   @RequestMapping(value = "/upload", method = RequestMethod.POST)
-  String upload(Map<String, Object> model, HttpServletRequest request, HttpServletResponse response,
-                @RequestParam(name = "file") MultipartFile[] files){
+  String upload(MultipartHttpServletRequest request){
 
-      System.out.println("\nupload  : " + files);
+      MultipartFile file = request.getFile("file");
+      String name = file.getOriginalFilename();
 
-      String[] message = new String[files.length];
+      System.out.println("\nupload  : " + name);
 
-      for (int i = 0; i < files.length; i++) {
-          MultipartFile file = files[i];
-          String name = file.getOriginalFilename();
-          String dropboxPath = "/" + name;
-          //System.out.println("\ndropboxPath  : " + dropboxPath + "");
+      String dropboxPath = "/" + name;
+      String message = "";
 
-          if(!name.isEmpty() && name.length() > 0){
-              File localFile = new File(name);
-              try {
-                  localFile.createNewFile();
-                  FileOutputStream fos = new FileOutputStream(localFile);
-                  fos.write(file.getBytes());
-                  fos.close();
-              } catch (IOException e){
-                  System.err.println("Invalid <local-path>: create file fail" + localFile.toString());
-              }
-
-              if (!localFile.exists()) {
-                  System.err.println("Invalid <local-path>: file does not exist." + localFile.toString());
-                  message[i] = "\" "+ localFile.toString() +" \" does not exist";
-              }
-              else if (!localFile.isFile()) {
-                  System.err.println("Invalid <local-path>: not a file." + localFile.toString());
-                  message[i] = "\" "+ localFile.toString() +" \" not a file";
-              }
-              else  message[i] = uploadFile(client, localFile, dropboxPath);
-
-              localFile.delete();
+      if(!name.isEmpty() && name.length() > 0){
+          File localFile = new File(name);
+          try {
+              localFile.createNewFile();
+              FileOutputStream fos = new FileOutputStream(localFile);
+              fos.write(file.getBytes());
+              fos.close();
+          } catch (IOException e){
+              System.err.println("Invalid <local-path>: create file fail" + localFile.toString());
           }
+
+          if (!localFile.exists()) {
+              System.err.println("Invalid <local-path>: file does not exist." + localFile.toString());
+              message = "\" "+ localFile.toString() +" \" does not exist";
+          }
+          else if (!localFile.isFile()) {
+              System.err.println("Invalid <local-path>: not a file." + localFile.toString());
+              message = "\" "+ localFile.toString() +" \" not a file";
+          }
+          else  message = uploadFile(client, localFile, dropboxPath);
+
+          localFile.delete();
       }
 
-      model.put("status", "connected to Dropbox");
-      model.put("display_name","Welcome, " + user.display_name);
-      model.put("message1", message[0]);
-      model.put("message2", message[1]);
-      model.put("message3", message[2]);
-
-      return "connected";
-  }
+      return message;
+    }
 
   private void exceptionHandler(String action, HttpServletResponse response, String msg, int code, String para){
 
@@ -238,7 +232,7 @@ public class Main {
                   .uploadAndFinish(in);
 
           //System.out.println(metadata.toStringMultiline());
-          status = "\" " + localFile + " \" uploaded successfully";
+          status = "\"" + localFile + "\" uploaded successfully";
 
       } catch (UploadErrorException ex) {
 
